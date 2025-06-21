@@ -95,7 +95,7 @@ vim.g.have_nerd_font = true
 vim.opt.guifont = 'FiraCode Nerd Font Mono'
 
 -- guicursor
-vim.opt.guicursor = 'n-v-c:block,i-ci-ve:ver25,r-cr:hor20'
+-- vim.opt.guicursor = 'n-v-c:block,i-ci-ve:ver25,r-cr:hor20'
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -197,21 +197,6 @@ vim.keymap.set('i', '<C-b>', '<Left>', { desc = 'Move left in insert mode' })
 --  Use CTRL+<hjkl> to switch between windows
 --
 --  See `:help wincmd` for a list of all window commands
-local function repeatable_cmd(cmd)
-  return function()
-    vim.cmd('normal! ' .. cmd)
-  end
-end
--- vim.keymap.set('n', '<leader>wc', '<C-w>q', { desc = 'Close window' })
--- vim.keymap.set('n', '<leader>wh', '<C-w><C-h>', { desc = 'Move focus to the left window' })
--- vim.keymap.set('n', '<leader>wl', '<C-w><C-l>', { desc = 'Move focus to the right window' })
--- vim.keymap.set('n', '<leader>wj', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
--- vim.keymap.set('n', '<leader>wk', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
--- vim.keymap.set('n', '<leader>wu', function() repeatable_cmd '<C-w>+' end, { desc = 'Increase height' })
--- vim.keymap.set('n', '<leader>wd', function() repeatable_cmd '<C-w>-' end, { desc = 'Decrease height' })
--- vim.keymap.set('n', '<leader>ws', function() repeatable_cmd '<C-w><' end, { desc = 'Decrease width' })
--- vim.keymap.set('n', '<leader>we', '<C-w>>', { desc = 'Increase width' })
-
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
 -- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
 -- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
@@ -274,6 +259,15 @@ require('lazy').setup({
       'nvim-lua/plenary.nvim', -- required
       'sindrets/diffview.nvim', -- optional - Diff integration
       'nvim-telescope/telescope.nvim', -- optional
+    },
+    opts = {
+      floating = {
+        relative = 'editor',
+        width = 0.6,
+        height = 0.7,
+        style = 'minimal',
+        border = 'rounded',
+      },
     },
     keys = {
       -- Git group header
@@ -383,7 +377,7 @@ require('lazy').setup({
     },
     opts = {}, -- config options here
     keys = {
-      { '<leader>-', ':Triptych<CR>' },
+      { '<leader>-', ':Triptych<CR>', desc = 'File Explorer' },
     },
   },
 
@@ -429,10 +423,6 @@ require('lazy').setup({
       { '<leader>ws', '<cmd>w<cr>', desc = 'Save buffer' },
       { '<leader>w|', '<cmd>vsplit<cr>', desc = 'Vertically split window' },
       { '<leader>w_', '<cmd>split<cr>', desc = 'Horizontal split window' },
-      { '<leader>wh', '<C-w><C-h>', desc = 'Move focus to the left window', mode = { 'n', 'v' } },
-      { '<leader>wl', '<C-w><C-l>', desc = 'Move focus to the right window', mode = { 'n', 'v' } },
-      { '<leader>wj', '<C-w><C-j>', desc = 'Move focus to the lower window', mode = { 'n', 'v' } },
-      { '<leader>wk', '<C-w><C-k>', desc = 'Move focus to the upper window', mode = { 'n', 'v' } },
       {
         '<leader>wd',
         '<C-w><',

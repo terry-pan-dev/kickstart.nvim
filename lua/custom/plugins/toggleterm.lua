@@ -13,7 +13,7 @@ return {
         insert_mappings = true, -- Apply mappings in insert mode
         terminal_mappings = true, -- Apply mappings in terminal mode
         persist_size = true, -- Remember split size
-        direction = 'vertical', -- Options: "horizontal", "vertical", "float"
+        direction = 'float', -- Options: "horizontal", "vertical", "float"
         close_on_exit = true, -- Close terminal when process exits
         shell = vim.o.shell, -- Use default shell (e.g., bash, zsh)
         float_opts = {
