@@ -91,7 +91,11 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
+vim.opt.guifont = 'FiraCode Nerd Font Mono'
+
+-- guicursor
+vim.opt.guicursor = 'n-v-c:block,i-ci-ve:ver25,r-cr:hor20'
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -135,7 +139,8 @@ vim.o.signcolumn = 'yes'
 vim.o.updatetime = 250
 
 -- Decrease mapped sequence wait time
-vim.o.timeoutlen = 300
+vim.o.timeout = true
+vim.o.timeoutlen = 1000
 
 -- Configure how new splits should be opened
 vim.o.splitright = true
@@ -184,20 +189,28 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- or just use <C-\><C-n> to exit terminal mode
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
--- TIP: Disable arrow keys in normal mode
--- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
--- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
--- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
--- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
+-- Easy nagivate cursor when in insert mode
+vim.keymap.set('i', '<C-f>', '<Right>', { desc = 'Move right in insert mode' })
+vim.keymap.set('i', '<C-b>', '<Left>', { desc = 'Move left in insert mode' })
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
 --
 --  See `:help wincmd` for a list of all window commands
-vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
-vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
-vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
-vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+local function repeatable_cmd(cmd)
+  return function()
+    vim.cmd('normal! ' .. cmd)
+  end
+end
+-- vim.keymap.set('n', '<leader>wc', '<C-w>q', { desc = 'Close window' })
+-- vim.keymap.set('n', '<leader>wh', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+-- vim.keymap.set('n', '<leader>wl', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+-- vim.keymap.set('n', '<leader>wj', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+-- vim.keymap.set('n', '<leader>wk', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+-- vim.keymap.set('n', '<leader>wu', function() repeatable_cmd '<C-w>+' end, { desc = 'Increase height' })
+-- vim.keymap.set('n', '<leader>wd', function() repeatable_cmd '<C-w>-' end, { desc = 'Decrease height' })
+-- vim.keymap.set('n', '<leader>ws', function() repeatable_cmd '<C-w><' end, { desc = 'Decrease width' })
+-- vim.keymap.set('n', '<leader>we', '<C-w>>', { desc = 'Increase width' })
 
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
 -- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
@@ -249,6 +262,83 @@ require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
 
+  {
+    'chentoast/marks.nvim',
+    event = 'VeryLazy',
+    opts = {},
+  },
+
+  {
+    'NeogitOrg/neogit',
+    dependencies = {
+      'nvim-lua/plenary.nvim', -- required
+      'sindrets/diffview.nvim', -- optional - Diff integration
+      'nvim-telescope/telescope.nvim', -- optional
+    },
+    keys = {
+      -- Git group header
+      { '<leader>g', nil, desc = 'Git/Neogit' },
+
+      -- Neogit main commands
+      { '<leader>gs', '<cmd>Neogit<cr>', desc = 'Status (Neogit)' },
+      { '<leader>gc', '<cmd>Neogit commit<cr>', desc = 'Commit' },
+      { '<leader>gp', '<cmd>Neogit push<cr>', desc = 'Push' },
+      { '<leader>gl', '<cmd>Neogit pull<cr>', desc = 'Pull' },
+      { '<leader>gb', '<cmd>Neogit branch<cr>', desc = 'Branches' },
+
+      -- Diffview commands
+      { '<leader>gd', '<cmd>DiffviewOpen<cr>', desc = 'Open Diffview' },
+      { '<leader>gD', '<cmd>DiffviewClose<cr>', desc = 'Close Diffview' },
+
+      -- File history
+      { '<leader>gh', nil, desc = 'History' },
+      { '<leader>ghf', '<cmd>DiffviewFileHistory %<cr>', desc = 'File History (current file)' },
+      { '<leader>ghp', '<cmd>DiffviewFileHistory<cr>', desc = 'Project History' },
+    },
+  },
+
+  {
+    'coder/claudecode.nvim',
+    dependencies = { 'folke/snacks.nvim' },
+    config = true,
+    keys = {
+      { '<leader>a', nil, desc = 'AI/Claude Code' },
+      { '<leader>ac', '<cmd>ClaudeCode<cr>', desc = 'Toggle Claude' },
+      { '<leader>af', '<cmd>ClaudeCodeFocus<cr>', desc = 'Focus Claude' },
+      { '<leader>ar', '<cmd>ClaudeCode --resume<cr>', desc = 'Resume Claude' },
+      { '<leader>aC', '<cmd>ClaudeCode --continue<cr>', desc = 'Continue Claude' },
+      { '<leader>ab', '<cmd>ClaudeCodeAdd %<cr>', desc = 'Add current buffer' },
+      { '<leader>as', '<cmd>ClaudeCodeSend<cr>', mode = 'v', desc = 'Send to Claude' },
+      {
+        '<leader>as',
+        '<cmd>ClaudeCodeTreeAdd<cr>',
+        desc = 'Add file',
+        ft = { 'NvimTree', 'neo-tree', 'oil' },
+      },
+      -- Diff management
+      { '<leader>aa', '<cmd>ClaudeCodeDiffAccept<cr>', desc = 'Accept diff' },
+      { '<leader>ad', '<cmd>ClaudeCodeDiffDeny<cr>', desc = 'Deny diff' },
+    },
+  },
+
+  {
+    'samharju/yeet.nvim',
+    dependencies = {
+      'stevearc/dressing.nvim', -- optional, provides sane UX
+    },
+    version = '*', -- use the latest release, remove for master
+    cmd = 'Yeet',
+    opts = {},
+  },
+
+  -- add this to your lua/plugins.lua, lua/plugins/init.lua,  or the file you keep your other plugins:
+  {
+    'numToStr/Comment.nvim',
+    opts = {
+      -- add any options here
+    },
+  },
+
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
   -- keys can be used to configure plugin behavior/loading/etc.
@@ -284,6 +374,39 @@ require('lazy').setup({
     },
   },
 
+  {
+    'simonmclean/triptych.nvim',
+    dependencies = {
+      'nvim-lua/plenary.nvim', -- required
+      'nvim-tree/nvim-web-devicons', -- optional for icons
+      'antosha417/nvim-lsp-file-operations', -- optional LSP integration
+    },
+    opts = {}, -- config options here
+    keys = {
+      { '<leader>-', ':Triptych<CR>' },
+    },
+  },
+
+  {
+    'kdheepak/lazygit.nvim',
+    cmd = {
+      'LazyGit',
+      'LazyGitConfig',
+      'LazyGitCurrentFile',
+      'LazyGitFilter',
+      'LazyGitFilterCurrentFile',
+    },
+    -- optional for floating window border decoration
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+    },
+    -- setting the keybinding for LazyGit with 'keys' is recommended in
+    -- order to load the plugin when the command is run for the first time
+    keys = {
+      { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'Open lazy git' },
+    },
+  },
+
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
   --
   -- This is often very useful to both group configuration, as well as handle
@@ -301,10 +424,30 @@ require('lazy').setup({
   { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
+    keys = {
+      { '<leader>wc', '<C-w>q', desc = 'Close window' },
+      { '<leader>ws', '<cmd>w<cr>', desc = 'Save buffer' },
+      { '<leader>w|', '<cmd>vsplit<cr>', desc = 'Vertically split window' },
+      { '<leader>w_', '<cmd>split<cr>', desc = 'Horizontal split window' },
+      { '<leader>wh', '<C-w><C-h>', desc = 'Move focus to the left window', mode = { 'n', 'v' } },
+      { '<leader>wl', '<C-w><C-l>', desc = 'Move focus to the right window', mode = { 'n', 'v' } },
+      { '<leader>wj', '<C-w><C-j>', desc = 'Move focus to the lower window', mode = { 'n', 'v' } },
+      { '<leader>wk', '<C-w><C-k>', desc = 'Move focus to the upper window', mode = { 'n', 'v' } },
+      {
+        '<leader>wd',
+        '<C-w><',
+        desc = 'Decrease width',
+      },
+      {
+        '<leader>wi',
+        '<C-w><',
+        desc = 'Increse width',
+      },
+    },
     opts = {
       -- delay between pressing a key and opening which-key (milliseconds)
       -- this setting is independent of vim.o.timeoutlen
-      delay = 0,
+      delay = 300,
       icons = {
         -- set icon mappings to true if you have a Nerd Font
         mappings = vim.g.have_nerd_font,
@@ -344,8 +487,12 @@ require('lazy').setup({
 
       -- Document existing key chains
       spec = {
+        { '<leader>a', group = '[C]laude' },
+        { '<leader>g', group = '[G]it' },
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]oggle' },
+        { '<leader>v', group = '[V]im' },
+        { '<leader>w', group = '[W]indow' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       },
     },
@@ -436,6 +583,12 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<leader>sc', builtin.commands, { desc = '[S] Find Vim Commands' })
+      vim.keymap.set('n', '<leader>ve', '<cmd>edit $MYVIMRC<cr>', { desc = 'Edit Vim' })
+      vim.keymap.set('n', '<leader>vr', '<cmd>source $MYVIMRC<cr>', { desc = 'Reload Vimrc' })
+      vim.keymap.set('n', '<leader>vs', '<cmd>Lazy sync<cr>', { desc = 'Lazy Sync' })
+      vim.keymap.set('n', '<leader>vu', '<cmd>Lazy update<cr>', { desc = 'Lazy Update' })
+      vim.keymap.set('n', '<leader>vl', '<cmd>Lazy reload<cr>', { desc = 'Lazy Reload' })
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -894,7 +1047,7 @@ require('lazy').setup({
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'tokyonight-moon'
     end,
   },
 
@@ -984,7 +1137,7 @@ require('lazy').setup({
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
