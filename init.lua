@@ -111,6 +111,11 @@ vim.o.number = true
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = 'a'
 
+-- Tab size
+vim.o.tabstop = 2
+vim.o.shiftwidth = 2
+vim.o.expandtab = true
+
 -- Don't show the mode, since it's already in the status line
 vim.o.showmode = false
 
@@ -173,6 +178,9 @@ vim.o.confirm = true
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
+vim.keymap.set('n', '<leader>vr', '<cmd>luafile $MYVIMRC<cr>', { desc = 'Reload Lua init file' })
+
+vim.keymap.set('n', '<leader>-', '<cmd>Neotree toggle<cr>', { desc = 'Neotree toggle' })
 
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
@@ -195,6 +203,10 @@ vim.keymap.set('i', '<C-b>', '<Left>', { desc = 'Move left in insert mode' })
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
+vim.keymap.set({ 'n', 'v' }, '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+vim.keymap.set({ 'n', 'v' }, '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+vim.keymap.set({ 'n', 'v' }, '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+vim.keymap.set({ 'n', 'v' }, '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 --
 --  See `:help wincmd` for a list of all window commands
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
@@ -369,16 +381,46 @@ require('lazy').setup({
   },
 
   {
-    'simonmclean/triptych.nvim',
+    'nvim-neo-tree/neo-tree.nvim',
+    branch = 'v3.x',
     dependencies = {
-      'nvim-lua/plenary.nvim', -- required
-      'nvim-tree/nvim-web-devicons', -- optional for icons
-      'antosha417/nvim-lsp-file-operations', -- optional LSP integration
+      'nvim-lua/plenary.nvim',
+      'nvim-tree/nvim-web-devicons', -- not strictly required, but recommended
+      'MunifTanjim/nui.nvim',
+      -- {"3rd/image.nvim", opts = {}}, -- Optional image support in preview window: See `# Preview Mode` for more information
     },
-    opts = {}, -- config options here
-    keys = {
-      { '<leader>-', ':Triptych<CR>', desc = 'File Explorer' },
+    lazy = false, -- neo-tree will lazily load itself
+    ---@module "neo-tree"
+    ---@type neotree.Config?
+    opts = {
+      -- fill any relevant options here
+      filesystem = {
+        filtered_items = {
+          visible = true,
+        },
+        window = {
+          mappings = {
+            ['l'] = 'open',
+            ['h'] = 'close',
+            ['<space>'] = 'none',
+          },
+        },
+      },
     },
+  },
+
+  {
+    'Zeioth/hot-reload.nvim',
+    dependencies = 'nvim-lua/plenary.nvim',
+    event = 'BufEnter',
+    opts = function()
+      return {
+        -- Files to be hot-reloaded when modified.
+        reload_files = {
+          vim.fn.stdpath 'config' .. 'init.lua',
+        },
+      }
+    end,
   },
 
   {
