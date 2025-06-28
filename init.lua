@@ -96,6 +96,8 @@ vim.opt.guifont = 'FiraCode Nerd Font Mono'
 
 -- guicursor
 -- vim.opt.guicursor = 'n-v-c:block,i-ci-ve:ver25,r-cr:hor20'
+--
+vim.opt.autoread = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -182,6 +184,8 @@ vim.keymap.set('n', '<leader>vr', '<cmd>luafile $MYVIMRC<cr>', { desc = 'Reload 
 
 vim.keymap.set('n', '<leader>-', '<cmd>Neotree toggle<cr>', { desc = 'Neotree toggle' })
 
+vim.keymap.set({ 'n', 'v', 'i' }, '<C-s>', '<cmd>:w<cr>', { desc = 'Save file' })
+
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
@@ -229,6 +233,25 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+-- Create empty buffer as a placeholder when last file close
+vim.api.nvim_create_autocmd('BufDelete', {
+  callback = function()
+    -- Check if there are no more file buffers (excluding neo-tree)
+    local buffers = vim.api.nvim_list_bufs()
+    local file_buffers = 0
+    for _, buf in ipairs(buffers) do
+      if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == '' and vim.bo[buf].buflisted then
+        file_buffers = file_buffers + 1
+      end
+    end
+
+    -- If no file buffers remain (only neo-tree or non-file buffers), create a new empty buffer
+    if file_buffers == 0 then
+      vim.cmd 'enew'
+    end
+  end,
+})
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -263,44 +286,6 @@ require('lazy').setup({
     'chentoast/marks.nvim',
     event = 'VeryLazy',
     opts = {},
-  },
-
-  {
-    'NeogitOrg/neogit',
-    dependencies = {
-      'nvim-lua/plenary.nvim', -- required
-      'sindrets/diffview.nvim', -- optional - Diff integration
-      'nvim-telescope/telescope.nvim', -- optional
-    },
-    opts = {
-      floating = {
-        relative = 'editor',
-        width = 0.6,
-        height = 0.7,
-        style = 'minimal',
-        border = 'rounded',
-      },
-    },
-    keys = {
-      -- Git group header
-      { '<leader>g', nil, desc = 'Git/Neogit' },
-
-      -- Neogit main commands
-      { '<leader>gs', '<cmd>Neogit<cr>', desc = 'Status (Neogit)' },
-      { '<leader>gc', '<cmd>Neogit commit<cr>', desc = 'Commit' },
-      { '<leader>gp', '<cmd>Neogit push<cr>', desc = 'Push' },
-      { '<leader>gl', '<cmd>Neogit pull<cr>', desc = 'Pull' },
-      { '<leader>gb', '<cmd>Neogit branch<cr>', desc = 'Branches' },
-
-      -- Diffview commands
-      { '<leader>gd', '<cmd>DiffviewOpen<cr>', desc = 'Open Diffview' },
-      { '<leader>gD', '<cmd>DiffviewClose<cr>', desc = 'Close Diffview' },
-
-      -- File history
-      { '<leader>gh', nil, desc = 'History' },
-      { '<leader>ghf', '<cmd>DiffviewFileHistory %<cr>', desc = 'File History (current file)' },
-      { '<leader>ghp', '<cmd>DiffviewFileHistory<cr>', desc = 'Project History' },
-    },
   },
 
   {
@@ -398,10 +383,14 @@ require('lazy').setup({
         filtered_items = {
           visible = true,
         },
+        follow_current_file = {
+          enabled = true,
+        },
         window = {
+          width = '20%',
           mappings = {
             ['l'] = 'open',
-            ['h'] = 'close',
+            ['h'] = 'close_node',
             ['<space>'] = 'none',
           },
         },
@@ -411,16 +400,17 @@ require('lazy').setup({
 
   {
     'Zeioth/hot-reload.nvim',
-    dependencies = 'nvim-lua/plenary.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim' },
     event = 'BufEnter',
-    opts = function()
-      return {
-        -- Files to be hot-reloaded when modified.
-        reload_files = {
-          vim.fn.stdpath 'config' .. 'init.lua',
-        },
-      }
-    end,
+    opts = {
+      reload_files = {
+        vim.fn.stdpath 'config' .. '/init.lua',
+      },
+      notify = true,
+      reload_callback = function()
+        vim.notify('init.lua reloaded!', vim.log.levels.INFO)
+      end,
+    },
   },
 
   {
@@ -439,7 +429,7 @@ require('lazy').setup({
     -- setting the keybinding for LazyGit with 'keys' is recommended in
     -- order to load the plugin when the command is run for the first time
     keys = {
-      { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'Open lazy git' },
+      { '<leader>g', '<cmd>LazyGit<cr>', desc = 'Open lazy git' },
     },
   },
 
@@ -462,7 +452,6 @@ require('lazy').setup({
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
     keys = {
       { '<leader>wc', '<C-w>q', desc = 'Close window' },
-      { '<leader>ws', '<cmd>w<cr>', desc = 'Save buffer' },
       { '<leader>w|', '<cmd>vsplit<cr>', desc = 'Vertically split window' },
       { '<leader>w_', '<cmd>split<cr>', desc = 'Horizontal split window' },
       {
@@ -1061,27 +1050,7 @@ require('lazy').setup({
     },
   },
 
-  { -- You can easily change to a different colorscheme.
-    -- Change the name of the colorscheme plugin below, and then
-    -- change the command in the config to whatever the name of that colorscheme is.
-    --
-    -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
-    priority = 1000, -- Make sure to load this before all the other start plugins.
-    config = function()
-      ---@diagnostic disable-next-line: missing-fields
-      require('tokyonight').setup {
-        styles = {
-          comments = { italic = false }, -- Disable italics in comments
-        },
-      }
-
-      -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-moon'
-    end,
-  },
+  { 'catppuccin/nvim', name = 'catppuccin', priority = 1000 },
 
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
