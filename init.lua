@@ -1100,8 +1100,6 @@ require('lazy').setup({
     },
   },
 
-  { 'catppuccin/nvim', name = 'catppuccin' },
-
   {
     'rockyzhang24/arctic.nvim',
     dependencies = { 'rktjmp/lush.nvim' },
