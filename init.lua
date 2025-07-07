@@ -191,13 +191,23 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
+-- Claude code keymap
+vim.keymap.set('n', '<leader>cc', '<cmd>ClaudeCode<CR>', { desc = 'Toggle Claude Code' })
+
+-- MultiTerm key binding
+vim.keymap.set('n', '<leader>t1', ':1Multiterm<CR>', { noremap = true, silent = true, desc = 'Toggle Terminal 1' })
+vim.keymap.set('n', '<leader>t2', ':2Multiterm<CR>', { noremap = true, silent = true, desc = 'Toggle Terminal 2' })
+vim.keymap.set('n', '<leader>t3', ':3Multiterm<CR>', { noremap = true, silent = true, desc = 'Toggle Terminal 3' })
+vim.keymap.set('t', '<Esc>', [[<C-\><C-n>]], { noremap = true, silent = true, desc = 'Exit Terminal Mode' })
+vim.keymap.set({ 'n', 'i' }, '<C-\\>', ':Multiterm<CR>', { noremap = true, silent = true, desc = 'Close Active Terminal' })
+
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
 -- is not what someone will guess without a bit more experience.
 --
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
-vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+-- vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- Easy nagivate cursor when in insert mode
 vim.keymap.set('i', '<C-f>', '<Right>', { desc = 'Move right in insert mode' })
@@ -205,10 +215,10 @@ vim.keymap.set('i', '<C-b>', '<Left>', { desc = 'Move left in insert mode' })
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
-vim.keymap.set({ 'n', 'v' }, '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
-vim.keymap.set({ 'n', 'v' }, '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
-vim.keymap.set({ 'n', 'v' }, '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
-vim.keymap.set({ 'n', 'v' }, '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+vim.keymap.set({ 'n', 'v', 't' }, '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window', noremap = true, silent = true })
+vim.keymap.set({ 'n', 'v', 't' }, '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window', noremap = true, silent = true })
+vim.keymap.set({ 'n', 'v', 't' }, '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window', noremap = true, silent = true })
+vim.keymap.set({ 'n', 'v', 't' }, '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window', noremap = true, silent = true })
 --
 --  See `:help wincmd` for a list of all window commands
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
@@ -248,6 +258,47 @@ vim.api.nvim_create_autocmd('BufDelete', {
       vim.cmd 'enew'
     end
   end,
+})
+
+-- Claude Code related function
+vim.api.nvim_create_autocmd('TermOpen', {
+  pattern = 'term://*claude',
+  callback = function()
+    vim.keymap.set('t', '<C-h>', '<C-\\><C-n><C-w>h', { buffer = true, noremap = true, silent = true, desc = 'Focus left window' })
+    -- Map <Esc> to send raw Esc character to terminal
+    vim.api.nvim_buf_set_keymap(0, 't', '<Esc>', [[<C-\><C-n>:lua vim.api.nvim_chan_send(vim.bo.channel, "\x1b")<CR>i]], {
+      noremap = true,
+      silent = true,
+      desc = 'Send Esc to claude-code terminal',
+    })
+  end,
+})
+
+local function navigate_right()
+  -- Store the current window ID
+  local current_win = vim.api.nvim_get_current_win()
+  -- Move to the right window
+  vim.cmd 'wincmd l'
+  -- Check if the new window is the claude-code terminal
+  local new_buf = vim.api.nvim_win_get_buf(vim.api.nvim_get_current_win())
+  local buf_name = vim.api.nvim_buf_get_name(new_buf)
+  if buf_name:match 'term://.*claude' then
+    -- Enter Terminal Insert mode if it's the claude-code terminal
+    vim.cmd 'startinsert'
+  end
+end
+
+vim.keymap.set({ 'n', 'v' }, '<C-l>', function()
+  navigate_right()
+end, { noremap = true, silent = true, desc = 'Focus claude-code terminal and enter Insert mode' })
+
+-- MultiTerm
+vim.api.nvim_create_autocmd('TermOpen', {
+  pattern = 'term://*zsh',
+  callback = function()
+    vim.cmd 'startinsert'
+  end,
+  desc = 'Start multiterm.vim terminals in Insert mode',
 })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
@@ -330,8 +381,18 @@ require('lazy').setup({
 
   {
     'coder/claudecode.nvim',
-    dependencies = { 'folke/snacks.nvim' },
+    dependencies = { 'folke/snacks.nvim', opts = {
+      terminal = {
+        enabled = true,
+      },
+    } },
     config = true,
+    opts = {
+      terminal_cmd = '/Users/terrypan/.claude/local/claude',
+      terminal = {
+        provider = 'native',
+      },
+    },
     keys = {
       { '<leader>a', nil, desc = 'AI/Claude Code' },
       { '<leader>ac', '<cmd>ClaudeCode<cr>', desc = 'Toggle Claude' },
@@ -437,6 +498,30 @@ require('lazy').setup({
         },
       },
     },
+  },
+
+  {
+    'chengzeyi/multiterm.vim',
+    event = 'VimEnter',
+    dependencies = { 'nvim-telescope/telescope.nvim' }, -- Add telescope as dependency
+    config = function()
+      -- Verify compatibility
+      if not (vim.fn.has 'nvim-0.4.0' == 1 and vim.fn.exists ':terminal' == 1) then
+        print 'multiterm.vim requires Neovim >= 0.4.0 with :terminal support'
+        return
+      end
+
+      -- Configure multiterm options
+      vim.g.multiterm_opts = {
+        height = 'float2nr(&lines * 0.8)',
+        width = 'float2nr(&columns * 0.4)',
+        border_hl = 'Comment',
+        border_chars = { '─', '│', '─', '│', '╭', '╮', '╯', '╰' },
+        show_term_tag = 1,
+        term_hl = 'Normal',
+        wintype = 'float',
+      }
+    end,
   },
 
   {
@@ -563,7 +648,7 @@ require('lazy').setup({
         { '<leader>a', group = '[C]laude' },
         { '<leader>g', group = '[G]it' },
         { '<leader>s', group = '[S]earch' },
-        { '<leader>t', group = '[T]oggle' },
+        { '<leader>t', group = '[T]erminal' },
         { '<leader>v', group = '[V]im' },
         { '<leader>w', group = '[W]indow' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
@@ -842,11 +927,11 @@ require('lazy').setup({
           -- code, if the language server you are using supports them
           --
           -- This may be unwanted, since they displace some of your code
-          if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
-            map('<leader>th', function()
-              vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
-            end, '[T]oggle Inlay [H]ints')
-          end
+          -- if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
+          --   map('<leader>th', function()
+          --     vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
+          --   end, '[T]oggle Inlay [H]ints')
+          -- end
         end,
       })
 
@@ -1105,6 +1190,7 @@ require('lazy').setup({
     dependencies = { 'rktjmp/lush.nvim' },
     name = 'arctic',
     branch = 'main',
+    lazy = false,
     priority = 1000,
     config = function()
       vim.cmd 'colorscheme arctic'
