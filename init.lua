@@ -89,6 +89,9 @@ P.S. You can delete this when you're done too. It's your config now! :)
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
+vim.g.matchparen_timeout = 2
+vim.g.matchparen_insert_timeout = 2
+vim.opt.cursorline = false
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
@@ -191,15 +194,8 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
--- Claude code keymap
-vim.keymap.set('n', '<leader>cc', '<cmd>ClaudeCode<CR>', { desc = 'Toggle Claude Code' })
-
--- MultiTerm key binding
-vim.keymap.set('n', '<leader>t1', ':1Multiterm<CR>', { noremap = true, silent = true, desc = 'Toggle Terminal 1' })
-vim.keymap.set('n', '<leader>t2', ':2Multiterm<CR>', { noremap = true, silent = true, desc = 'Toggle Terminal 2' })
-vim.keymap.set('n', '<leader>t3', ':3Multiterm<CR>', { noremap = true, silent = true, desc = 'Toggle Terminal 3' })
-vim.keymap.set('t', '<Esc>', [[<C-\><C-n>]], { noremap = true, silent = true, desc = 'Exit Terminal Mode' })
-vim.keymap.set({ 'n', 'i' }, '<C-\\>', ':Multiterm<CR>', { noremap = true, silent = true, desc = 'Close Active Terminal' })
+-- Quickly access neovim config file
+vim.keymap.set('n', '<leader>v', '<cmd>e $MYVIMRC<cr>', { desc = 'Open vimrc file' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -356,7 +352,7 @@ require('lazy').setup({
     opts = {},
   },
 
-  -- lazy.nvim
+  -- The notification popup window that on the top rigth
   {
     'folke/noice.nvim',
     event = 'VeryLazy',
@@ -379,6 +375,7 @@ require('lazy').setup({
     },
   },
 
+  -- For Claude code terminal
   {
     'coder/claudecode.nvim',
     dependencies = { 'folke/snacks.nvim', opts = {
@@ -394,36 +391,38 @@ require('lazy').setup({
       },
     },
     keys = {
-      { '<leader>a', nil, desc = 'AI/Claude Code' },
-      { '<leader>ac', '<cmd>ClaudeCode<cr>', desc = 'Toggle Claude' },
-      { '<leader>af', '<cmd>ClaudeCodeFocus<cr>', desc = 'Focus Claude' },
-      { '<leader>ar', '<cmd>ClaudeCode --resume<cr>', desc = 'Resume Claude' },
-      { '<leader>aC', '<cmd>ClaudeCode --continue<cr>', desc = 'Continue Claude' },
-      { '<leader>ab', '<cmd>ClaudeCodeAdd %<cr>', desc = 'Add current buffer' },
-      { '<leader>as', '<cmd>ClaudeCodeSend<cr>', mode = 'v', desc = 'Send to Claude' },
+      { '<leader>c', nil, desc = 'AI/Claude Code' },
+      { '<leader>cc', '<cmd>ClaudeCode<cr>', desc = 'Toggle Claude' },
+      { '<leader>cf', '<cmd>ClaudeCodeFocus<cr>', desc = 'Focus Claude' },
+      { '<leader>cr', '<cmd>ClaudeCode --resume<cr>', desc = 'Resume Claude' },
+      { '<leader>cC', '<cmd>ClaudeCode --continue<cr>', desc = 'Continue Claude' },
+      { '<leader>cb', '<cmd>ClaudeCodeAdd %<cr>', desc = 'Add current buffer' },
+      { '<leader>cs', '<cmd>ClaudeCodeSend<cr>', mode = 'v', desc = 'Send to Claude' },
       {
-        '<leader>as',
+        '<leader>cs',
         '<cmd>ClaudeCodeTreeAdd<cr>',
         desc = 'Add file',
         ft = { 'NvimTree', 'neo-tree', 'oil' },
       },
       -- Diff management
-      { '<leader>aa', '<cmd>ClaudeCodeDiffAccept<cr>', desc = 'Accept diff' },
-      { '<leader>ad', '<cmd>ClaudeCodeDiffDeny<cr>', desc = 'Deny diff' },
+      { '<leader>ca', '<cmd>ClaudeCodeDiffAccept<cr>', desc = 'Accept diff' },
+      { '<leader>cd', '<cmd>ClaudeCodeDiffDeny<cr>', desc = 'Deny diff' },
     },
   },
 
-  {
-    'samharju/yeet.nvim',
-    dependencies = {
-      'stevearc/dressing.nvim', -- optional, provides sane UX
-    },
-    version = '*', -- use the latest release, remove for master
-    cmd = 'Yeet',
-    opts = {},
-  },
+  -- {
+  --   'samharju/yeet.nvim',
+  --   dependencies = {
+  --     'stevearc/dressing.nvim', -- optional, provides sane UX
+  --   },
+  --   version = '*', -- use the latest release, remove for master
+  --   cmd = 'Yeet',
+  --   opts = {},
+  -- },
 
-  -- add this to your lua/plugins.lua, lua/plugins/init.lua,  or the file you keep your other plugins:
+  -- [[
+  -- gcc: comment out selected line
+  -- ]]
   {
     'numToStr/Comment.nvim',
     opts = {
@@ -501,45 +500,6 @@ require('lazy').setup({
   },
 
   {
-    'chengzeyi/multiterm.vim',
-    event = 'VimEnter',
-    dependencies = { 'nvim-telescope/telescope.nvim' }, -- Add telescope as dependency
-    config = function()
-      -- Verify compatibility
-      if not (vim.fn.has 'nvim-0.4.0' == 1 and vim.fn.exists ':terminal' == 1) then
-        print 'multiterm.vim requires Neovim >= 0.4.0 with :terminal support'
-        return
-      end
-
-      -- Configure multiterm options
-      vim.g.multiterm_opts = {
-        height = 'float2nr(&lines * 0.8)',
-        width = 'float2nr(&columns * 0.4)',
-        border_hl = 'Comment',
-        border_chars = { '─', '│', '─', '│', '╭', '╮', '╯', '╰' },
-        show_term_tag = 1,
-        term_hl = 'Normal',
-        wintype = 'float',
-      }
-    end,
-  },
-
-  {
-    'Zeioth/hot-reload.nvim',
-    dependencies = { 'nvim-lua/plenary.nvim' },
-    event = 'BufEnter',
-    opts = {
-      reload_files = {
-        vim.fn.stdpath 'config' .. '/init.lua',
-      },
-      notify = true,
-      reload_callback = function()
-        vim.notify('init.lua reloaded!', vim.log.levels.INFO)
-      end,
-    },
-  },
-
-  {
     'nvim-lualine/lualine.nvim',
     dependencies = { 'nvim-tree/nvim-web-devicons' },
   },
@@ -587,21 +547,7 @@ require('lazy').setup({
   { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
-    keys = {
-      { '<leader>wc', '<C-w>q', desc = 'Close window' },
-      { '<leader>w|', '<cmd>vsplit<cr>', desc = 'Vertically split window' },
-      { '<leader>w_', '<cmd>split<cr>', desc = 'Horizontal split window' },
-      {
-        '<leader>wd',
-        '<C-w><',
-        desc = 'Decrease width',
-      },
-      {
-        '<leader>wi',
-        '<C-w><',
-        desc = 'Increse width',
-      },
-    },
+    keys = {},
     opts = {
       -- delay between pressing a key and opening which-key (milliseconds)
       -- this setting is independent of vim.o.timeoutlen
@@ -648,8 +594,6 @@ require('lazy').setup({
         { '<leader>a', group = '[C]laude' },
         { '<leader>g', group = '[G]it' },
         { '<leader>s', group = '[S]earch' },
-        { '<leader>t', group = '[T]erminal' },
-        { '<leader>v', group = '[V]im' },
         { '<leader>w', group = '[W]indow' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       },
@@ -742,18 +686,18 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sm', builtin.marks, { desc = '[S]earch [M]arks' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader>sl', builtin.colorscheme, { desc = '[S]earch Colorscheme' })
-      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = 'Find existing buffers' })
       vim.keymap.set('n', '<leader>sc', builtin.commands, { desc = '[S] Find Vim Commands' })
-      vim.keymap.set('n', '<leader>ve', '<cmd>edit $MYVIMRC<cr>', { desc = 'Edit Vim' })
+      vim.keymap.set('n', '<leader>/', builtin.current_buffer_fuzzy_find, { desc = 'Search keywords current buffer' })
 
       -- Slightly advanced example of overriding default behavior and theme
-      vim.keymap.set('n', '<leader>/', function()
-        -- You can pass additional configuration to Telescope to change the theme, layout, etc.
-        builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-          winblend = 10,
-          previewer = false,
-        })
-      end, { desc = '[/] Fuzzily search in current buffer' })
+      -- vim.keymap.set('n', '<leader>/', function()
+      --   -- You can pass additional configuration to Telescope to change the theme, layout, etc.
+      --   builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
+      --     winblend = 10,
+      --     previewer = false,
+      --   })
+      -- end, { desc = '[/] Fuzzily search in current buffer' })
 
       -- It's also possible to pass additional configuration options.
       --  See `:help telescope.builtin.live_grep()` for information about particular keys
