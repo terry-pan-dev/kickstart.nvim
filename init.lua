@@ -98,7 +98,8 @@ vim.g.have_nerd_font = true
 vim.opt.guifont = 'FiraCode Nerd Font Mono'
 
 -- guicursor
--- vim.opt.guicursor = 'n-v-c:block,i-ci-ve:ver25,r-cr:hor20'
+vim.opt.guicursor = 'n-v-c:block,i-ci-ve:ver25,r-cr:hor20'
+vim.opt.termguicolors = true
 --
 vim.opt.autoread = true
 
@@ -191,6 +192,9 @@ vim.keymap.set({ 'n', 'v', 'i' }, '<C-s>', '<cmd>:w<cr>', { desc = 'Save file' }
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
+-- Using double esc to return to normal mode in terminal
+vim.keymap.set('t', '<Esc><Esc>', [[<C-\><C-n>]], { noremap = true, silent = true })
+
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
@@ -208,6 +212,8 @@ vim.keymap.set('n', '<leader>v', '<cmd>e $MYVIMRC<cr>', { desc = 'Open vimrc fil
 -- Easy nagivate cursor when in insert mode
 vim.keymap.set('i', '<C-f>', '<Right>', { desc = 'Move right in insert mode' })
 vim.keymap.set('i', '<C-b>', '<Left>', { desc = 'Move left in insert mode' })
+vim.keymap.set('i', '<C-n>', '<Down>', { desc = 'Move down in insert mode' })
+vim.keymap.set('i', '<C-p>', '<Up>', { desc = 'Move up in insert mode' })
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
@@ -236,6 +242,28 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     vim.hl.on_yank()
   end,
 })
+
+if vim.env.TERM_PROGRAM == 'iTerm.app' then
+  -- Set cursor to vertical bar in insert mode for all buffers, including terminals
+  vim.api.nvim_create_autocmd({ 'InsertEnter', 'TermEnter' }, {
+    callback = function()
+      vim.fn.system 'printf "\27]50;CursorShape=1\007"'
+    end,
+  })
+  -- Set cursor to block in normal mode or when leaving insert mode
+  vim.api.nvim_create_autocmd({ 'InsertLeave', 'TermLeave', 'VimLeave' }, {
+    callback = function()
+      vim.fn.system 'printf "\27]50;CursorShape=0\007"'
+    end,
+  })
+  -- Ensure cursor is set correctly when entering a terminal buffer
+  vim.api.nvim_create_autocmd({ 'TermOpen' }, {
+    callback = function()
+      -- Default to block cursor in normal mode for terminal
+      vim.fn.system 'printf "\27]50;CursorShape=0\007"'
+    end,
+  })
+end
 
 -- Create empty buffer as a placeholder when last file close
 vim.api.nvim_create_autocmd('BufDelete', {
@@ -350,6 +378,66 @@ require('lazy').setup({
     'chentoast/marks.nvim',
     event = 'VeryLazy',
     opts = {},
+  },
+
+  -- icon for neovim
+  { 'echasnovski/mini.nvim', version = '*' },
+
+  -- Terminal emulator
+  --[[
+  --
+  --local map = vim.keymap.set
+local opts = { noremap = true, silent = true }
+
+-- Terminal creation with different layouts
+map("n", "<leader>cs", ":TermNew layout=below<CR>", opts)   -- Split below
+map("n", "<leader>cv", ":TermNew layout=right<CR>", opts)   -- Vertical split
+map("n", "<leader>cf", ":TermNew layout=float<CR>", opts)   -- Floating window
+map("n", "<leader>ct", ":TermNew layout=tab<CR>", opts)     -- New tab
+
+-- Open terminal picker
+map("n", "<leader>cl", ":TermSelect<CR>", opts)  -- List and select terminals
+
+-- Send text to last focused terminal
+map("n", "<leader>cs", ":TermSend! new_line=false<CR>", opts)  -- Send line without newline
+map("x", "<leader>cs", ":TermSend! new_line=false<CR>", opts)  -- Send selection without newline
+
+-- Send and show output without focusing terminal
+map("n", "<leader>cx", ":TermSend! action=visible<CR>", opts)  -- Execute in terminal, keep focus
+map("x", "<leader>cx", ":TermSend! action=visible<CR>", opts)  -- Execute selection in terminal, keep focus
+
+-- Send as markdown code block
+map("n", "<leader>cS", ":TermSend! action=visible trim=false decorator=markdown_code<CR>", opts)
+map("x", "<leader>cS", ":TermSend! action=visible trim=false decorator=markdown_code<CR>", opts)
+  --]]
+  {
+    'waiting-for-dev/ergoterm.nvim',
+    config = function()
+      require('ergoterm').setup {
+        picker = {
+          picker = 'telescope',
+        },
+        terminal_defaults = {
+          layout = 'right',
+          size = {
+            below = '30%',
+            right = '30%',
+          },
+          close_on_job_exit = true,
+          float_opts = {
+            width = 120,
+            height = 30,
+            border = 'single',
+          },
+        },
+      }
+    end,
+    keys = {
+      { '<leader>tb', ':TermNew layout=below<CR>', desc = 'Create Terminal Below' },
+      { '<leader>tr', ':TermNew layout=right<CR>', desc = 'Create Terminal Right' },
+      { '<leader>tf', ':TermNew layout=float<CR>', desc = 'Create Floating Terminal' },
+      { '<leader>tp', ':TermSelect<CR>', desc = 'List and select terminals' },
+    },
   },
 
   -- The notification popup window that on the top rigth
@@ -594,6 +682,7 @@ require('lazy').setup({
         { '<leader>a', group = '[C]laude' },
         { '<leader>g', group = '[G]it' },
         { '<leader>s', group = '[S]earch' },
+        { '<leader>t', group = '[T]erminal' },
         { '<leader>w', group = '[W]indow' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       },
