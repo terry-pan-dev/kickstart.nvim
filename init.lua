@@ -98,8 +98,14 @@ vim.g.have_nerd_font = true
 vim.opt.guifont = 'FiraCode Nerd Font Mono'
 
 -- guicursor
-vim.opt.guicursor = 'n-v-c:block,i-ci-ve:ver25,r-cr:hor20'
+vim.opt.guicursor = table.concat({
+  'n-v-c-sm:block', -- normal/visual/cmd-line/substitute
+  'i-ci-ve:ver25', -- insert/cmdline-insert/visual-select
+  'r-cr-o:hor20', -- replace modes/operator-pending
+  't:ver25', -- terminal-job mode => vertical bar
+}, ',')
 vim.opt.termguicolors = true
+
 --
 vim.opt.autoread = true
 
@@ -217,10 +223,11 @@ vim.keymap.set('i', '<C-p>', '<Up>', { desc = 'Move up in insert mode' })
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
-vim.keymap.set({ 'n', 'v', 't' }, '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window', noremap = true, silent = true })
-vim.keymap.set({ 'n', 'v', 't' }, '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window', noremap = true, silent = true })
-vim.keymap.set({ 'n', 'v', 't' }, '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window', noremap = true, silent = true })
-vim.keymap.set({ 'n', 'v', 't' }, '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window', noremap = true, silent = true })
+
+vim.keymap.set({ 't', 'x' }, '<C-w>h', '<C-\\><C-n><C-w>h', { desc = 'Move focus to the left window', noremap = true, silent = true })
+vim.keymap.set({ 't', 'x' }, '<C-w>l', '<C-\\><C-n><C-w>l', { desc = 'Move focus to the right window', noremap = true, silent = true })
+vim.keymap.set({ 't', 'x' }, '<C-w>j', '<C-\\><C-n><C-w>j', { desc = 'Move focus to the lower window', noremap = true, silent = true })
+vim.keymap.set({ 't', 'x' }, '<C-w>k', '<C-\\><C-n><C-w>k', { desc = 'Move focus to the upper window', noremap = true, silent = true })
 --
 --  See `:help wincmd` for a list of all window commands
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
@@ -242,28 +249,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     vim.hl.on_yank()
   end,
 })
-
-if vim.env.TERM_PROGRAM == 'iTerm.app' then
-  -- Set cursor to vertical bar in insert mode for all buffers, including terminals
-  vim.api.nvim_create_autocmd({ 'InsertEnter', 'TermEnter' }, {
-    callback = function()
-      vim.fn.system 'printf "\27]50;CursorShape=1\007"'
-    end,
-  })
-  -- Set cursor to block in normal mode or when leaving insert mode
-  vim.api.nvim_create_autocmd({ 'InsertLeave', 'TermLeave', 'VimLeave' }, {
-    callback = function()
-      vim.fn.system 'printf "\27]50;CursorShape=0\007"'
-    end,
-  })
-  -- Ensure cursor is set correctly when entering a terminal buffer
-  vim.api.nvim_create_autocmd({ 'TermOpen' }, {
-    callback = function()
-      -- Default to block cursor in normal mode for terminal
-      vim.fn.system 'printf "\27]50;CursorShape=0\007"'
-    end,
-  })
-end
 
 -- Create empty buffer as a placeholder when last file close
 vim.api.nvim_create_autocmd('BufDelete', {
@@ -288,7 +273,6 @@ vim.api.nvim_create_autocmd('BufDelete', {
 vim.api.nvim_create_autocmd('TermOpen', {
   pattern = 'term://*claude',
   callback = function()
-    vim.keymap.set('t', '<C-h>', '<C-\\><C-n><C-w>h', { buffer = true, noremap = true, silent = true, desc = 'Focus left window' })
     -- Map <Esc> to send raw Esc character to terminal
     vim.api.nvim_buf_set_keymap(0, 't', '<Esc>', [[<C-\><C-n>:lua vim.api.nvim_chan_send(vim.bo.channel, "\x1b")<CR>i]], {
       noremap = true,
@@ -378,6 +362,17 @@ require('lazy').setup({
     'chentoast/marks.nvim',
     event = 'VeryLazy',
     opts = {},
+  },
+
+  {
+    'nvimdev/dashboard-nvim',
+    event = 'VimEnter',
+    config = function()
+      require('dashboard').setup {
+        -- config
+      }
+    end,
+    dependencies = { { 'nvim-tree/nvim-web-devicons' } },
   },
 
   -- icon for neovim
