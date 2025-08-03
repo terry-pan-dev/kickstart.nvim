@@ -365,6 +365,15 @@ require('lazy').setup({
   },
 
   {
+    'airblade/vim-rooter',
+    config = function()
+      vim.g.rooter_patterns = { '.git' } -- Look for Git root
+      vim.g.rooter_change_cwd = 1 -- Change cwd automatically
+      vim.g.rooter_silent_chdir = 1 -- Avoid printing messages
+    end,
+  },
+
+  {
     'nvimdev/dashboard-nvim',
     event = 'VimEnter',
     config = function()
