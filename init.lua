@@ -339,6 +339,17 @@ require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
 
+  -- markdown render
+  {
+    'MeanderingProgrammer/render-markdown.nvim',
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.nvim' }, -- if you use the mini.nvim suite
+    -- dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.icons' }, -- if you use standalone mini plugins
+    -- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' }, -- if you prefer nvim-web-devicons
+    ---@module 'render-markdown'
+    ---@type render.md.UserConfig
+    opts = {},
+  },
+
   --[[
     mx              Set mark x
     m,              Set the next available alphabetical (lowercase) mark
@@ -416,6 +427,7 @@ map("x", "<leader>cS", ":TermSend! action=visible trim=false decorator=markdown_
   --]]
   {
     'waiting-for-dev/ergoterm.nvim',
+    lazy = false,
     config = function()
       require('ergoterm').setup {
         picker = {
@@ -435,6 +447,22 @@ map("x", "<leader>cS", ":TermSend! action=visible trim=false decorator=markdown_
           },
         },
       }
+
+      local terms = require 'ergoterm.terminal'
+      local float_term = terms.Terminal:new {
+        name = 'float_terminal',
+        layout = 'float',
+        sticky = true,
+        selectable = true,
+      }
+
+      float_term:start()
+      vim.keymap.set({ 'n', 'i' }, '<C-\\>', function()
+        float_term:toggle 'float'
+      end, { desc = 'Toggle float terminal' })
+      vim.keymap.set('t', '<C-\\>', function()
+        float_term:toggle 'float'
+      end, { desc = 'Toggle float terminal' })
     end,
     keys = {
       { '<leader>tb', ':TermNew layout=below<CR>', desc = 'Create Terminal Below' },
