@@ -192,6 +192,9 @@ vim.o.confirm = true
 --  See `:help vim.keymap.set()`
 vim.keymap.set('n', '<leader>-', '<cmd>Neotree toggle<cr>', { desc = 'Neotree toggle' })
 
+vim.keymap.set({ 'i', 'c' }, '<D-v>', '<C-r>+', { noremap = true, silent = true }) -- insert mode
+vim.keymap.set('t', '<D-v>', '<C-\\><C-n>"+pa', { noremap = true, silent = true }) -- terminal mode
+
 vim.keymap.set({ 'n', 'v', 'i' }, '<C-s>', '<cmd>:w<cr>', { desc = 'Save file' })
 
 -- Clear highlights on search when pressing <Esc> in normal mode
